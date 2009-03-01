@@ -1,7 +1,7 @@
 #/usr/bin/env python
 
 import xml.sax, xml.sax.handler
-import sys, os, socket, time
+import sys, os, os.path, socket, time
 
 class PlistHandler(xml.sax.handler.ContentHandler):
 	def __init__(self):
@@ -100,7 +100,34 @@ def convert_one(emlx_file, maildir):
 	date = long(metadata.get('date-sent', time.time()))
 	filename = md_filename(date, flags)
 	open(os.path.join(maildir, "tmp", filename), "wb").write(body)
-	os.rename(os.path.join(maildir, "tmp", filename), os.path.join(maildir, "new", filename))
+	os.rename(os.path.join(maildir, "tmp", filename), os.path.join(maildir, "cur", filename))
+
+def emlx_message_dir(emlx_dir):
+	msg_dir = os.path.join(emlx_dir + ".mbox", "Messages")
+	if not os.path.isdir(msg_dir):
+		msg_dir = os.path.join(emlx_dir + ".imapmbox", "Messages")
+	if not os.path.isdir(msg_dir):
+		return None
+	return msg_dir
+
+def emlx_messages(emlx_dir):
+	msg_dir = emlx_message_dir(emlx_dir)
+	if msg_dir is None:
+		return []
+	else:
+		return [x for x in os.listdir(msg_dir) if x.endswith(".emlx")]
+
+def emlx_subfolders(emlx_dir):
+	if not os.path.isdir(emlx_dir):
+		if os.path.isdir(emlx_dir + ".sbd"):
+			emlx_dir = ".sbd"
+		else:
+			return
+	for x in os.listdir(emlx_dir):
+		suffixes = [".sbd", ".mbox", ".imapmbox"]
+		for s in suffixes:
+			if x.endswith(s):
+				yield os.path.join(emlx_dir, x[:-len(s)])
 
 def main():
 	if len(sys.argv) != 3:
@@ -110,5 +137,12 @@ def main():
 
 if __name__ == "__main__":
 	#print parse_plist(open("/tmp/x.plist").read())
-	convert_one("/tmp/emlx2maildir/../Mail/Mailboxes/Downieville.mbox/Messages/60419.emlx", "/tmp/md")
+	#convert_one("/tmp/emlx2maildir/../Mail/Mailboxes/Downieville.mbox/Messages/60419.emlx", "/tmp/md")
+	st = [("/tmp/emlx2maildir/../Mail/Mailboxes", 0)]
+	while len(st):
+		mb, d = st[-1]
+		st = st[:-1]
+		print "  "*d + mb
+		for s in emlx_subfolders(mb):
+			st.append((s, d+1))
 	#main()
