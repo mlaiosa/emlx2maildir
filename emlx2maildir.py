@@ -135,6 +135,12 @@ def maildirmake(dir):
 		if not os.path.exists(os.path.join(dir, s)):
 			os.makedirs(os.path.join(dir, s))
 
+def remove_slash(s):
+	if len(s) and s[-1] == '/':
+		return s[:-1]
+	else:
+		return s
+
 def main():
 	parser = optparse.OptionParser()
 	parser.add_option("-r", "--recursive", action="store_true", help="Recurse into subfolders")
@@ -158,9 +164,10 @@ def main():
 	if len(args) != 2:
 		parser.error("Not enough arguments")
 
-	tasks = [tuple(args)]
+	tasks = [(remove_slash(args[0]), args[1] + '/')]
 	while len(tasks):
 		emlx_folder, maildir = tasks[-1]
+		
 		P("Converting %r -> %r" % (emlx_folder, maildir))
 		tasks = tasks[:-1]
 		dry("Making maildir %r" % maildir, maildirmake, maildir)
@@ -168,7 +175,7 @@ def main():
 			dry("Converting message %r" % msg, convert_one, msg, maildir)
 		if opts.recursive:
 			for f in emlx_subfolders(emlx_folder):
-				tasks.append((f, os.path.join(maildir, "." + os.path.basename(f))))
+				tasks.append((f, maildir + "." + os.path.basename(f)))
 
 if __name__ == "__main__":
 	main()
