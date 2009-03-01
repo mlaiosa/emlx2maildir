@@ -1,8 +1,7 @@
 #/usr/bin/env python
 
-import optparse
 import xml.sax, xml.sax.handler
-import sys
+import sys, os, socket, time
 
 class PlistHandler(xml.sax.handler.ContentHandler):
 	def __init__(self):
@@ -76,6 +75,15 @@ flag_mapping = [
 	(FL_DELETED, "T"),
 ]
 
+hostname = socket.gethostname()
+pid = os.getpid()
+gSeq = 0
+
+def md_filename(date, flags):
+	global gSeq
+	gSeq += 1
+	return "%d.M%dP%dQ%d.%s:2,%s" % (date, time.time(), pid, gSeq, hostname, flags)
+
 def convert_one(emlx_file, maildir):
 	contents = open(emlx_file, "rb").read()
 	boundry = contents.find("\x0a")
@@ -84,11 +92,15 @@ def convert_one(emlx_file, maildir):
 	metadata = parse_plist(contents[boundry+1+length:])
 
 	flags = ""
-	for fl, let in flag_mapping:
-		if metadata['flags'] & fl:
-			flags += let
-	if metadata['flags'] & (jkFL_FORWARDED | FL_REDIRECTED):
-	print "Proposed flags:", flags
+	if "flags" in metadata:
+		for fl, let in flag_mapping:
+			if metadata['flags'] & fl:
+				flags += let
+
+	date = long(metadata.get('date-sent', time.time()))
+	filename = md_filename(date, flags)
+	open(os.path.join(maildir, "tmp", filename), "wb").write(body)
+	os.rename(os.path.join(maildir, "tmp", filename), os.path.join(maildir, "new", filename))
 
 def main():
 	if len(sys.argv) != 3:
@@ -98,5 +110,5 @@ def main():
 
 if __name__ == "__main__":
 	#print parse_plist(open("/tmp/x.plist").read())
-	convert_one("/tmp/emlx2maildir/../Mail/Mailboxes/Downieville.mbox/Messages/60419.emlx", "")
+	convert_one("/tmp/emlx2maildir/../Mail/Mailboxes/Downieville.mbox/Messages/60419.emlx", "/tmp/md")
 	#main()
