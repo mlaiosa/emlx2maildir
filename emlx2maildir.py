@@ -1,5 +1,6 @@
 #/usr/bin/env python
 
+import optparse
 import xml.sax, xml.sax.handler
 import sys, os, os.path, socket, time
 
@@ -115,7 +116,7 @@ def emlx_messages(emlx_dir):
 	if msg_dir is None:
 		return []
 	else:
-		return [x for x in os.listdir(msg_dir) if x.endswith(".emlx")]
+		return [os.path.join(msg_dir, x) for x in os.listdir(msg_dir) if x.endswith(".emlx")]
 
 def emlx_subfolders(emlx_dir):
 	if not os.path.isdir(emlx_dir):
@@ -129,20 +130,45 @@ def emlx_subfolders(emlx_dir):
 			if x.endswith(s):
 				yield os.path.join(emlx_dir, x[:-len(s)])
 
+def maildirmake(dir):
+	for s in ["cur", "new", "tmp"]:
+		if not os.path.exists(os.path.join(dir, s)):
+			os.makedirs(os.path.join(dir, s))
+
 def main():
-	if len(sys.argv) != 3:
-		print "Usage: emlx2maildir emlx_folder maildir"
-		sys.exit(1)
-	emlx_dir, maildir = sys.argv[1:3]
+	parser = optparse.OptionParser()
+	parser.add_option("-r", "--recursive", action="store_true", help="Recurse into subfolders")
+	parser.add_option("-q", "--quiet", action="store_true", help="Only print error output")
+	parser.add_option("--dry-run", action="store_true", help="Don't do anything")
+	parser.add_option("--verbose", action="store_true", help="Displays lots of stuff")
+	opts, args = parser.parse_args()
+
+	def P(s):
+		if not opts.quiet:
+			print s
+	def V(s):
+		if opts.dry_run or opts.verbose:
+			P(s)
+
+	def dry(s, act, *args, **kwargs):
+		V(s)
+		if not opts.dry_run:
+			return act(*args, **kwargs)
+
+	if len(args) != 2:
+		parser.error("Not enough arguments")
+
+	tasks = [tuple(args)]
+	while len(tasks):
+		emlx_folder, maildir = tasks[-1]
+		P("Converting %r -> %r" % (emlx_folder, maildir))
+		tasks = tasks[:-1]
+		dry("Making maildir %r" % maildir, maildirmake, maildir)
+		for msg in emlx_messages(emlx_folder):
+			dry("Converting message %r" % msg, convert_one, msg, maildir)
+		if opts.recursive:
+			for f in emlx_subfolders(emlx_folder):
+				tasks.append((f, os.path.join(maildir, "." + os.path.basename(f))))
 
 if __name__ == "__main__":
-	#print parse_plist(open("/tmp/x.plist").read())
-	#convert_one("/tmp/emlx2maildir/../Mail/Mailboxes/Downieville.mbox/Messages/60419.emlx", "/tmp/md")
-	st = [("/tmp/emlx2maildir/../Mail/Mailboxes", 0)]
-	while len(st):
-		mb, d = st[-1]
-		st = st[:-1]
-		print "  "*d + mb
-		for s in emlx_subfolders(mb):
-			st.append((s, d+1))
-	#main()
+	main()
