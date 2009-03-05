@@ -1,4 +1,4 @@
-#/usr/bin/env python
+#!/usr/bin/env python
 
 import optparse
 import xml.sax, xml.sax.handler
@@ -100,8 +100,11 @@ def convert_one(emlx_file, maildir):
 
 	date = long(metadata.get('date-sent', time.time()))
 	filename = md_filename(date, flags)
-	open(os.path.join(maildir, "tmp", filename), "wb").write(body)
-	os.rename(os.path.join(maildir, "tmp", filename), os.path.join(maildir, "cur", filename))
+	tmp_name = os.path.join(maildir, "tmp", filename)
+	cur_name = os.path.join(maildir, "cur", filename)
+	open(tmp_name, "wb").write(body)
+	os.rename(tmp_name, cur_name)
+	os.utime(cur_name, (date,date))
 
 def emlx_message_dir(emlx_dir):
 	msg_dir = os.path.join(emlx_dir + ".mbox", "Messages")
