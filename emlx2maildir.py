@@ -131,7 +131,10 @@ def emlx_subfolders(emlx_dir):
 		suffixes = [".sbd", ".mbox", ".imapmbox"]
 		for s in suffixes:
 			if x.endswith(s):
-				yield os.path.join(emlx_dir, x[:-len(s)])
+				subfolder = os.path.join(emlx_dir, x[:-len(s)])
+				for tmp in emlx_subfolders(os.path.join(emlx_dir, x)):
+					yield tmp
+				yield subfolder
 
 def maildirmake(dir):
 	for s in ["cur", "new", "tmp"]:
