@@ -114,12 +114,30 @@ def emlx_message_dir(emlx_dir):
 		return None
 	return msg_dir
 
+def emlx_message_dirs(emlx_dir):
+	for x in os.listdir(emlx_dir):
+		suffixes = [".sbd", ".mbox", ".imapmbox"]
+		search = True
+		for s in suffixes:
+			if x.endswith(s):
+				search = False
+		if x == "Messages":
+			msg_dir = os.path.join(emlx_dir,"Messages")
+			yield msg_dir
+		elif search:
+			subfolder = os.path.join(emlx_dir, x)
+			if	os.path.isdir(subfolder):
+				print "Recursing into %r" % (subfolder)
+				for tmp in emlx_message_dirs(subfolder):
+					yield tmp
+
 def emlx_messages(emlx_dir):
-	msg_dir = emlx_message_dir(emlx_dir)
-	if msg_dir is None:
-		return []
-	else:
-		return [os.path.join(msg_dir, x) for x in os.listdir(msg_dir) if x.endswith(".emlx")]
+	if os.path.isdir(emlx_dir + ".mbox"):
+		for msg_dir in emlx_message_dirs(emlx_dir + ".mbox"):
+			print "Hoorayy: %r" % (msg_dir)
+			for x in os.listdir(msg_dir):
+				if x.endswith(".emlx"):
+					yield os.path.join(msg_dir, x)
 
 def emlx_subfolders(emlx_dir):
 	if not os.path.isdir(emlx_dir):
@@ -131,7 +149,10 @@ def emlx_subfolders(emlx_dir):
 		suffixes = [".sbd", ".mbox", ".imapmbox"]
 		for s in suffixes:
 			if x.endswith(s):
-				yield os.path.join(emlx_dir, x[:-len(s)])
+				subfolder = os.path.join(emlx_dir, x[:-len(s)])
+				for tmp in emlx_subfolders(os.path.join(emlx_dir, x)):
+					yield tmp
+				yield subfolder
 
 def maildirmake(dir):
 	for s in ["cur", "new", "tmp"]:
