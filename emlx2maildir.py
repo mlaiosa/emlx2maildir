@@ -134,7 +134,6 @@ def emlx_message_dirs(emlx_dir):
 def emlx_messages(emlx_dir):
 	if os.path.isdir(emlx_dir + ".mbox"):
 		for msg_dir in emlx_message_dirs(emlx_dir + ".mbox"):
-			print "Hoorayy: %r" % (msg_dir)
 			for x in os.listdir(msg_dir):
 				if x.endswith(".emlx"):
 					yield os.path.join(msg_dir, x)
