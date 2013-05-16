@@ -151,7 +151,7 @@ def emlx_messages(emlx_dir):
 	if os.path.isdir(emlx_dir + ".mbox"):
 		for msg_dir in emlx_message_dirs(emlx_dir + ".mbox"):
 			for x in os.listdir(msg_dir):
-				if x.endswith(".emlx"):
+				if x.endswith(".emlx") and x[0] != '.':
 					yield os.path.join(msg_dir, x)
 
 def emlx_subfolders(emlx_dir):
