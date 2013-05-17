@@ -184,7 +184,7 @@ def remove_slash(s):
 		return s
 
 def main():
-	parser = optparse.OptionParser()
+	parser = optparse.OptionParser(usage="Usage: %prog [options] emlx_folder maildir")
 	parser.add_option("-r", "--recursive", action="store_true", help="Recurse into subfolders")
 	parser.add_option("-q", "--quiet", action="store_true", help="Only print error output")
 	parser.add_option("--dry-run", action="store_true", help="Don't do anything")
