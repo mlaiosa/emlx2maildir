@@ -18,7 +18,7 @@
 
 import optparse
 import xml.sax, xml.sax.handler
-import sys, os, os.path, socket, time
+import re, os, os.path, socket, time
 
 class PlistHandler(xml.sax.handler.ContentHandler):
 	def __init__(self):
@@ -63,6 +63,9 @@ class PlistHandler(xml.sax.handler.ContentHandler):
 		self.value += chars
 
 def parse_plist(plist_xml):
+	# Remove any DOCTYPE declarations, to stop the XML parser from trying to
+	# download the DTD.
+	plist_xml = re.sub(r'<!DOCTYPE.*?"\s*>', "", plist_xml)
 	p = PlistHandler()
 	xml.sax.parseString(plist_xml, p)
 	return p.top
